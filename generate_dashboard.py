@@ -726,6 +726,8 @@ def build_bokeh_night_plots(observations, phot_stats=None):
                 r1 = p1.scatter(
                     x='date_dt', y='fwhm', source=src1, size=8,
                     color=color, alpha=0.9, legend=band,
+                )
+                hover1 = HoverTool(
                     renderers=[r1],
                     tooltips=[
                         ('Objet', '@target'),
@@ -743,6 +745,8 @@ def build_bokeh_night_plots(observations, phot_stats=None):
                 r2 = p2.scatter(
                     x='date_dt', y='zp1s', source=src2, size=8,
                     color=color, alpha=0.9, legend=band,
+                )
+                hover2 = HoverTool(
                     renderers=[r2],
                     tooltips=[
                         ('Objet', '@target'),
