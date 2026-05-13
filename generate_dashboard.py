@@ -377,6 +377,21 @@ def save_header_cache(cache_path, cache):
     pd.DataFrame(rows).sort_values('rel_path').to_csv(cache_path, index=False)
 
 
+def _is_cache_hit(fits_file, cache):
+    """Retourne True si le fichier est valide dans le cache (pas besoin de relire)."""
+    rel_path = str(fits_file.relative_to(REDUCTIONS_PATH)).replace('\\', '/')
+    try:
+        st = fits_file.stat()
+    except Exception:
+        return False
+    cached = cache.get(rel_path)
+    if cached is None:
+        return False
+    cm = cached.get('mtime', np.nan)
+    cs = cached.get('size', -1)
+    return pd.notna(cm) and abs(float(cm) - float(st.st_mtime)) < 1e-6 and int(cs) == int(st.st_size)
+
+
 def read_fits_headers_cached(fits_file, cache):
     """Lit les entetes via cache CSV, avec invalidation par mtime + taille."""
     rel_path = str(fits_file.relative_to(REDUCTIONS_PATH)).replace('\\', '/')
@@ -514,6 +529,8 @@ def collect_observation_data(demo=False):
     # Evite de relire les memes entetes a chaque execution.
     header_cache = load_header_cache(HEADER_CACHE_PATH)
     cache_dirty = False
+    files_since_save = 0
+    SAVE_INTERVAL = 100
 
     night_dirs = sorted(REDUCTIONS_PATH.glob('*/'))
     
@@ -538,18 +555,26 @@ def collect_observation_data(demo=False):
             sorted(night_dir.glob('*_HeI.fits.gz'))
             if '_PSF' not in f.name]
 
-        # Lecture parallele des entetes (I/O bound) — 4 fichiers a la fois.
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            header_results = list(tqdm(
-                executor.map(lambda f: read_fits_headers_cached(f, header_cache), fits_files),
-                total=len(fits_files), desc=f"  {nightid}", unit="FITS", leave=False,
-            ))
+        # Lecture parallele uniquement pour les cache misses (I/O bound).
+        misses = [f for f in fits_files if not _is_cache_hit(f, header_cache)]
+        if misses:
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                list(tqdm(
+                    executor.map(lambda f: read_fits_headers_cached(f, header_cache), misses),
+                    total=len(misses), desc=f"  {nightid} (lecture)", unit="FITS", leave=False,
+                ))
 
-        for fits_file, (header, was_updated) in zip(fits_files, header_results):
+        for fits_file in tqdm(fits_files, desc=f"  {nightid}", unit="FITS", leave=False):
+            header, was_updated = read_fits_headers_cached(fits_file, header_cache)
             if header is None:
                 continue
-            cache_dirty = cache_dirty or was_updated
-
+            if was_updated:
+                cache_dirty = True
+                files_since_save += 1
+                if files_since_save >= SAVE_INTERVAL:
+                    save_header_cache(HEADER_CACHE_PATH, header_cache)
+                    cache_dirty = False
+                    files_since_save = 0
             parts = fits_file.stem.split('_')
             target = '_'.join(parts[1:-1]) if len(parts) > 2 else 'Unknown'
             filter_type = parts[-1]
@@ -590,7 +615,13 @@ def collect_observation_data(demo=False):
             header, was_updated = read_fits_headers_cached(phot_file, header_cache)
             if header is None:
                 continue
-            cache_dirty = cache_dirty or was_updated
+            if was_updated:
+                cache_dirty = True
+                files_since_save += 1
+                if files_since_save >= SAVE_INTERVAL:
+                    save_header_cache(HEADER_CACHE_PATH, header_cache)
+                    cache_dirty = False
+                    files_since_save = 0
 
             filter_type = header.get('filter', 'N/A')
             target = header.get('object', phot_file.stem)
@@ -612,6 +643,12 @@ def collect_observation_data(demo=False):
                 'path': str(phot_file.relative_to(REDUCTIONS_PATH)),
             })
 
+        # Sauvegarde incrementale apres chaque nuit pour survivre a un Ctrl-C.
+        if cache_dirty:
+            save_header_cache(HEADER_CACHE_PATH, header_cache)
+            cache_dirty = False
+            files_since_save = 0
+
     psf_previews = {}
     night_dirs_psf = sorted(REDUCTIONS_PATH.glob('*/'))
     emoji_print("\n🌟 Chargement des cartes PSF\n")
@@ -623,7 +660,7 @@ def collect_observation_data(demo=False):
         for psf_png in psf_png_files:
             psf_previews[psf_png.stem] = to_web_path(psf_png)
 
-    # Re-ecriture du cache uniquement si au moins une entree a ete actualisee.
+    # Sauvegarde finale si reste.
     if cache_dirty:
         save_header_cache(HEADER_CACHE_PATH, header_cache)
 
