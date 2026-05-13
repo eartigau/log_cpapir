@@ -1,0 +1,48 @@
+# Configuration portable du dashboard CPAPIR
+#
+# Resolution reductions_path:
+# 1) reductions_path_by_user[<usager courant>] si present
+# 2) reductions_path
+# 3) ./reductions (fallback)
+#
+# Cas demande:
+# - usager "cpapir"  -> /data/cpapir/reductions
+# - usager "eartigau" -> ./reductions (dans le repertoire courant)
+
+reductions_path_by_user:
+  cpapir: /data/cpapir/reductions
+  eartigau: /Users/eartigau/GitHubProjects/log_cpapir/reductions
+
+# Dossier des assets generes (previews + cache CSV), separe de reductions
+assets_path_by_user:
+  cpapir: /data/cpapir/dashboard_assets
+  eartigau: /Users/eartigau/GitHubProjects/log_cpapir/dashboard_assets
+
+# Fallback si l'usager n'est pas dans reductions_path_by_user
+reductions_path: ./reductions
+
+# Fallback assets si l'usager n'est pas dans assets_path_by_user
+assets_path: ./dashboard_assets
+
+# Sync web archive (reproduction du comportement historique rsync)
+sync_enabled_users:
+  - cpapir
+
+sync_to_web_target_by_user:
+  cpapir: ommwww@intranet.omm-astro.ca:/home/ommwww/public_html/cpapir_data_compil2/
+
+sync_port_by_user:
+  cpapir: 22
+
+sync_excludes:
+  - "*phot*fits*"
+  - "*.fits"
+  - "*.fits.gz"
+  - "*.dat"
+  - "*.sav"
+  - "*.csv"
+
+# Chemin de sortie (relatif a la racine projet = parent de reductions_path)
+output_path: ./dashboard.html
+
+regenerate_previews: true

@@ -1,0 +1,28 @@
+# Dashboard assets (previews, PDFs, etc.)
+dashboard_assets/previews/
+dashboard_assets/pdf_previews/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter and notebook checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+
+# Config locale optionnelle (override non versionné)
+dashboard_config.local.yaml
+
+# Other temp files
+*.jpg
+*.jpeg
+*.pdf
+*.png
+*.fits
+*.fits.gz
+**/*.fits
+**/*.fits.gz
+**/*.csv
+*.csv
