@@ -18,6 +18,7 @@ import subprocess
 import gc
 from datetime import datetime
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 # Force UTF-8 output encoding (for legacy servers)
 if sys.stdout.encoding != 'utf-8':
@@ -530,12 +531,21 @@ def collect_observation_data(demo=False):
         nightid = night_dir.name
         night_dt, year_label, night_label = parse_nightid(nightid)
 
-        fits_files = sorted(night_dir.glob('*_[JHI].fits')) + sorted(night_dir.glob('*_HeI.fits')) + sorted(night_dir.glob('*_[JHI].fits.gz')) + sorted(night_dir.glob('*_HeI.fits.gz'))
-        for fits_file in tqdm(fits_files, desc=f"  {nightid}", unit="FITS", leave=False):
-            if '_PSF' in fits_file.name:
-                continue
+        fits_files = [f for f in
+            sorted(night_dir.glob('*_[JHI].fits')) +
+            sorted(night_dir.glob('*_HeI.fits')) +
+            sorted(night_dir.glob('*_[JHI].fits.gz')) +
+            sorted(night_dir.glob('*_HeI.fits.gz'))
+            if '_PSF' not in f.name]
 
-            header, was_updated = read_fits_headers_cached(fits_file, header_cache)
+        # Lecture parallele des entetes (I/O bound) — 4 fichiers a la fois.
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            header_results = list(tqdm(
+                executor.map(lambda f: read_fits_headers_cached(f, header_cache), fits_files),
+                total=len(fits_files), desc=f"  {nightid}", unit="FITS", leave=False,
+            ))
+
+        for fits_file, (header, was_updated) in zip(fits_files, header_results):
             if header is None:
                 continue
             cache_dirty = cache_dirty or was_updated
