@@ -146,7 +146,7 @@ def run_rsync(source, dest, excludes=None):
 
 
 def sync_web_archive(no_sync=False):
-    """Synchronise le dashboard et les dossiers de nuits vers le serveur web (mode cpapir)."""
+    """Synchronise le tableau de bord et les dossiers de nuits vers le serveur web (mode cpapir)."""
     if no_sync:
         print('Sync web desactive par option --no-sync')
         return
@@ -157,7 +157,7 @@ def sync_web_archive(no_sync=False):
 
     print(f'Sync web active: {SYNC_TARGET} (port {SYNC_PORT})')
 
-    # 1) Sync du dashboard principal et des assets web.
+    # 1) Sync du tableau de bord principal et des assets web.
     ok_main = run_rsync(OUTPUT_PATH, SYNC_TARGET)
     ok_assets = run_rsync(ASSETS_PATH, os.path.join(SYNC_TARGET, 'dashboard_assets/'))
 
@@ -1366,13 +1366,13 @@ def main(no_sync=False, demo=False):
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    emoji_print(f'\n✨ OK Dashboard generated: {OUTPUT_PATH}')
+    emoji_print(f'\n✨ OK Tableau de bord genere: {OUTPUT_PATH}')
     print(f'   Open in browser: file://{OUTPUT_PATH}')
     sync_web_archive(no_sync=no_sync)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generation du dashboard CPAPIR')
+    parser = argparse.ArgumentParser(description='Generation du tableau de bord CPAPIR')
     parser.add_argument(
         '--no-sync',
         action='store_true',

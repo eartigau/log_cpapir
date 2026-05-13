@@ -1,6 +1,6 @@
-# CFHT CPAPIR Observations Dashboard
+# CFHT CPAPIR Observations - Tableau de bord
 
-A clean, interactive dashboard for exploring reduced CPAPIR observations from `reductions/`.
+A clean, interactive tableau de bord for exploring reduced CPAPIR observations from `reductions/`.
 
 ## Repository
 
@@ -27,7 +27,7 @@ git clone https://github.com/eartigau/log_cpapir.git
 
 ## Overview
 
-Current dashboard features include:
+Current tableau de bord features include:
 
 - **Hierarchical browsing** by year and night
 - **Interactive Bokeh plots** for FWHM and ZP1S
@@ -40,17 +40,17 @@ Current dashboard features include:
 
 ## Files
 
-- `generate_dashboard.py` — Dashboard generator and optional rsync sync logic
+- `generate_dashboard.py` — Tableau de bord generator and optional rsync sync logic
 - `dashboard_config.yaml` — Shared config (paths, sync, excludes)
 - `dashboard_config.local.yaml` — Optional local override (ignored by git)
-- `dashboard.html` — Generated dashboard
+- `dashboard.html` — Generated tableau de bord
 - `dashboard_assets/` — Generated previews and `header_cache.csv`
 
 ## Usage
 
-### Generate/Regenerate the Dashboard
+### Generate/Regenerate the Tableau de bord
 
-To create or update the dashboard with the latest observations:
+To create or update the tableau de bord with the latest observations:
 
 ```bash
 python generate_dashboard.py
@@ -69,7 +69,7 @@ Run without sync (useful for tests):
 python generate_dashboard.py --no-sync
 ```
 
-### View the Dashboard
+### View the Tableau de bord
 
 Open `dashboard.html` in any modern web browser:
 
@@ -82,7 +82,7 @@ Or use the file path directly:
 file:///Users/eartigau/GitHubProjects/log_cpapir/dashboard.html
 ```
 
-## Dashboard Sections
+## Tableau de bord Sections
 
 ### 1. Year/Night Browser
 Collapsible sections by year and by observing night.

@@ -1,4 +1,4 @@
-# OMM CPAPIR Data Dashboard
+# OMM CPAPIR - Tableau de bord des donnees
 
 Tableau de bord interactif pour l'archive CPAPIR (OMM/CFHT): navigation par nuits, graphes de qualite, apercus scientifiques et cartes PSF.
 
