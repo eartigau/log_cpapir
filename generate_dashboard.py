@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Genere un tableau de bord HTML interactif a partir des observations reduites CPAPIR.
 - Panneaux compactes par annee puis par date
@@ -6,6 +7,7 @@ Genere un tableau de bord HTML interactif a partir des observations reduites CPA
 - Apercus JPG compresses generes depuis les FITS
 """
 
+import sys
 import json
 import yaml
 import colorsys
@@ -15,6 +17,12 @@ import argparse
 import subprocess
 from datetime import datetime
 from pathlib import Path
+
+# Force UTF-8 output encoding (for legacy servers)
+if sys.stdout.encoding != 'utf-8':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import numpy as np
 import pandas as pd
@@ -37,6 +45,27 @@ from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.plotting import figure
 from bokeh.resources import INLINE
 
+
+# Helper function for emoji/fallback messages
+EMOJI_MAP = {
+    '📡': '[SCAN]',
+    '📂': '[DIR]',
+    '🌟': '[PSF]',
+    '✅': '[OK]',
+    '📊': '[PLOT]',
+    '✨': '[DONE]',
+}
+
+def emoji_print(*args, **kwargs):
+    """Print with emoji fallback for legacy servers."""
+    try:
+        print(*args, **kwargs)
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        # Fallback: replace emojis with text
+        text = ' '.join(str(arg) for arg in args)
+        for emoji, fallback in EMOJI_MAP.items():
+            text = text.replace(emoji, fallback)
+        print(text, **kwargs)
 
 
 # Chargement config YAML (base versionnee + override locale optionnelle)
@@ -477,7 +506,7 @@ def collect_observation_data():
     cache_dirty = False
 
     night_dirs = sorted(REDUCTIONS_PATH.glob('*/'))
-    print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
+    emoji_print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
     for night_dir in tqdm(night_dirs, desc="Nuits", unit="night"):
         if not night_dir.is_dir():
             continue
@@ -559,7 +588,7 @@ def collect_observation_data():
 
     psf_previews = {}
     night_dirs_psf = sorted(REDUCTIONS_PATH.glob('*/'))
-    print("\n🌟 Chargement des cartes PSF\n")
+    emoji_print("\n🌟 Chargement des cartes PSF\n")
     for night_dir in tqdm(night_dirs_psf, desc="Nuits PSF", unit="night"):
         if not night_dir.is_dir():
             continue
@@ -1314,16 +1343,16 @@ def generate_html(observations, psf_previews, phot_stats=None):
 
 
 def main(no_sync=False):
-    print(f'\n📡 Scanning observations in {REDUCTIONS_PATH}...')
+    emoji_print(f'\n📡 Scanning observations in {REDUCTIONS_PATH}...')
     observations, phot_stats, psf_previews = collect_observation_data()
-    print(f'\n✅ Found {len(observations)} observations + {len(phot_stats)} phot files')
+    emoji_print(f'\n✅ Found {len(observations)} observations + {len(phot_stats)} phot files')
 
-    print('\n📊 Construction des graphiques Bokeh interactifs...')
+    emoji_print('\n📊 Construction des graphiques Bokeh interactifs...')
     html = generate_html(observations, psf_previews, phot_stats=phot_stats)
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(f'\n✨ OK Dashboard generated: {OUTPUT_PATH}')
+    emoji_print(f'\n✨ OK Dashboard generated: {OUTPUT_PATH}')
     print(f'   Open in browser: file://{OUTPUT_PATH}')
     sync_web_archive(no_sync=no_sync)
 
