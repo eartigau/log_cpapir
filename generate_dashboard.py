@@ -541,9 +541,11 @@ def collect_observation_data(demo=False):
         emoji_print(f"\n📂 MODE DEMO: {len(night_dirs)} nuits uniformément distribuées\n")
     else:
         emoji_print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
-    for night_dir in tqdm(night_dirs, desc="Nuits", unit="night", miniters=1, mininterval=0, dynamic_ncols=True):
+    pbar_nights = tqdm(night_dirs, desc="Nuits", unit="night", dynamic_ncols=True)
+    for night_dir in pbar_nights:
         if not night_dir.is_dir():
             continue
+        pbar_nights.set_description(f"Nuit {night_dir.name}")
 
         nightid = night_dir.name
         night_dt, year_label, night_label = parse_nightid(nightid)
