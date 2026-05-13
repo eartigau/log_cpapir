@@ -103,7 +103,7 @@ if output_cfg.is_absolute():
 else:
     OUTPUT_PATH = (PROJECT_ROOT / output_cfg).resolve()
 
-REGENERATE_PREVIEWS = config.get('regenerate_previews', True)
+REGENERATE_PREVIEWS = config.get('regenerate_previews', False)
 
 assets_cfg = assets_by_user.get(current_user, config.get('assets_path', './dashboard_assets'))
 ASSETS_PATH = Path(str(assets_cfg)).expanduser()
@@ -402,8 +402,8 @@ def read_fits_headers_cached(fits_file, cache):
     return header, True
 
 
-def generate_fits_preview_png(fits_file, png_file):
-    """Genere un PNG avec image raster et overlays grille/echelle/boussole."""
+def generate_fits_preview_jpg(fits_file, jpg_file):
+    """Genere un JPEG avec image raster et overlays grille/echelle/boussole."""
     try:
         with fits.open(fits_file) as hdul:
             header = hdul[0].header
@@ -423,7 +423,7 @@ def generate_fits_preview_png(fits_file, png_file):
             arr = np.where(np.isfinite(arr), arr, vmin)
             arr = (arr - vmin) / (vmax - vmin)
             arr8 = np.uint8(np.clip(arr * 255.0, 0, 255))
-            png_file.parent.mkdir(parents=True, exist_ok=True)
+            jpg_file.parent.mkdir(parents=True, exist_ok=True)
             wcs = None
             try:
                 wcs = WCS(header)
@@ -493,7 +493,7 @@ def generate_fits_preview_png(fits_file, png_file):
                 ax.imshow(arr8, origin='lower', cmap='gray', interpolation='nearest')
                 ax.axis('off')
             fig.tight_layout(pad=0.2)
-            fig.savefig(png_file, format='png', dpi=200)
+            fig.savefig(jpg_file, format='jpeg', dpi=150, pil_kwargs={'quality': 85, 'optimize': True})
             plt.close(fig)
             plt.close('all')  # Force close all figures
             gc.collect()  # Force garbage collection
@@ -542,9 +542,9 @@ def collect_observation_data(demo=False):
             target = '_'.join(parts[1:-1]) if len(parts) > 2 else 'Unknown'
             filter_type = parts[-1]
 
-            png_abs = ASSETS_PATH / 'png_previews' / nightid / f'{fits_file.stem}.png'
-            if REGENERATE_PREVIEWS or (not png_abs.exists()) or (png_abs.stat().st_mtime < fits_file.stat().st_mtime):
-                generate_fits_preview_png(fits_file, png_abs)
+            jpg_abs = ASSETS_PATH / 'jpg_previews' / nightid / f'{fits_file.stem}.jpg'
+            if not jpg_abs.exists() or jpg_abs.stat().st_mtime < fits_file.stat().st_mtime:
+                generate_fits_preview_jpg(fits_file, jpg_abs)
 
             observations.append({
                 'nightid': nightid,
@@ -561,7 +561,7 @@ def collect_observation_data(demo=False):
                 'dec': header['dec'],
                 'shape': header['shape'],
                 'path': str(fits_file.relative_to(REDUCTIONS_PATH)),
-                'png_preview': to_web_path(png_abs),
+                'png_preview': to_web_path(jpg_abs),
             })
 
         # Les phot_ enrichissent les graphes de qualite, mais restent hors tableau principal.

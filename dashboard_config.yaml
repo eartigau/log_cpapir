@@ -45,4 +45,4 @@ sync_excludes:
 # Chemin de sortie (relatif a la racine projet = parent de reductions_path)
 output_path: ./dashboard.html
 
-regenerate_previews: true
+regenerate_previews: false
