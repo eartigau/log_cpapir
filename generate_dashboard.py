@@ -700,7 +700,7 @@ def build_bokeh_night_plots(observations, phot_stats=None):
             title=f'Nuit {nightid} - FWHM',
             x_axis_type='datetime',
             height=250,
-            sizing_mode='stretch_width',
+            sizing_mode='scale_width',
             tools='pan,wheel_zoom,box_zoom,reset,save',
             toolbar_location='right',
         )
@@ -710,7 +710,7 @@ def build_bokeh_night_plots(observations, phot_stats=None):
             title=f'Nuit {nightid} - ZP1S',
             x_axis_type='datetime',
             height=250,
-            sizing_mode='stretch_width',
+            sizing_mode='scale_width',
             tools='pan,wheel_zoom,box_zoom,reset,save',
             toolbar_location='right',
         )
@@ -763,7 +763,7 @@ def build_bokeh_night_plots(observations, phot_stats=None):
         p1.grid.grid_line_alpha = 0.25
         p2.grid.grid_line_alpha = 0.25
 
-        plot_map[nightid] = row(p1, p2, sizing_mode='stretch_width')
+        plot_map[nightid] = row(p1, p2, sizing_mode='scale_width')
 
     if not plot_map:
         return '', {}
