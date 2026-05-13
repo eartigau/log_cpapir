@@ -656,9 +656,8 @@ def collect_observation_data(demo=False):
         pbar_nights.set_postfix(fits=len(fits_files), phot=len(phot_files))
 
     psf_previews = {}
-    night_dirs_psf = sorted(REDUCTIONS_PATH.glob('*/'))
     emoji_print("\n🌟 Chargement des cartes PSF\n")
-    for night_dir in tqdm(night_dirs_psf, desc="Nuits PSF", unit="night"):
+    for night_dir in tqdm(night_dirs, desc="PSF", unit="nuit"):
         if not night_dir.is_dir():
             continue
 
