@@ -610,6 +610,8 @@ def collect_observation_data(demo=False):
             *night_dir.glob('*phot*.fits'),
             *night_dir.glob('*phot*.fits.gz'),
         })
+        if demo:
+            phot_files = phot_files[::10]
         for phot_file in tqdm(phot_files, desc=f"  {nightid} (phot)", unit="phot", leave=False):
             if '_PSF' in phot_file.name:
                 continue
