@@ -727,6 +727,8 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
             bands = ', '.join(format_filter_html(f) for f in sorted_filters)
             total_exptime = ndf['exptime'].sum()
 
+            bokeh_fallback = '<div class="plot-fallback">Graphique indisponible</div>'
+            bokeh_content = bokeh_divs.get(nightid, bokeh_fallback)
             html.append(
                 f'<details class="night-item" data-nightid="{nightid}" data-year="{year}">'
                 f'<summary><span class="night-title">Date {night_label}</span>'
@@ -739,7 +741,7 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
                 f'<div class="stat-item"><span class="stat-name">Exposition totale:</span><span class="stat-value">{total_exptime:.1f} s</span></div>'
                 '</div>'
                 '<div class="night-plot-wrap">'
-                f'{bokeh_divs.get(nightid, "<div class=\"plot-fallback\">Graphique indisponible</div>")}'
+                + bokeh_content +
                 '</div>'
                 '<div class="table-scroll">'
                 f'<table class="data-table night-table" data-nightid="{nightid}">'
@@ -753,12 +755,10 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
                 zp1s_str = f"{row['zp1s']:.2f}" if pd.notna(row['zp1s']) else 'N/A'
                 png_src = row.get('png_preview', '')
                 if png_src:
-                    preview_cell = (
-                        '<td class="preview-cell">'
-                        f'<button type="button" class="preview-btn" data-img="{png_src}" '
-                        f'onclick="openImageModal(\'{png_src}\', true)" title="Ouvrir l\'image astronomique avec loupe">🔭</button>'
-                        '</td>'
-                    )
+                    # Build button HTML without f-string backslashes (Python < 3.12 compat)
+                    js_call = "openImageModal('" + png_src.replace("'", "\\'") + "', true)"
+                    preview_btn = '<button type="button" class="preview-btn" data-img="{}" onclick="{}" title="Ouvrir l\'image astronomique avec loupe">🔭</button>'.format(png_src, js_call)
+                    preview_cell = '<td class="preview-cell">' + preview_btn + '</td>'
                 else:
                     preview_cell = '<td>-</td>'
 
@@ -766,13 +766,10 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
                 psf_key = f"{psf_key}_PSF"
                 psf_src = psf_previews.get(psf_key, '')
                 if psf_src:
-                    psf_cell = (
-                        '<td class="preview-cell psf-cell">'
-                        f'<button type="button" class="preview-btn psf-btn" '
-                        f'onclick="openImageModal(\'{psf_src}\', false)" '
-                        f'title="Ouvrir la carte PSF">⭐</button>'
-                        '</td>'
-                    )
+                    # Build button HTML without f-string backslashes (Python < 3.12 compat)
+                    js_call_psf = "openImageModal('" + psf_src.replace("'", "\\'") + "', false)"
+                    psf_btn = '<button type="button" class="preview-btn psf-btn" onclick="{}" title="Ouvrir la carte PSF">⭐</button>'.format(js_call_psf)
+                    psf_cell = '<td class="preview-cell psf-cell">' + psf_btn + '</td>'
                 else:
                     psf_cell = '<td>-</td>'
 
