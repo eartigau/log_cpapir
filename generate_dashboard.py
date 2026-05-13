@@ -259,11 +259,10 @@ def parse_nightid(nightid):
 
 
 def read_fits_headers(fits_file):
-    """Lit les mots-clef utiles depuis un FITS."""
+    """Lit les mots-clef utiles depuis un FITS (header seulement, sans charger les donnees)."""
     try:
-        with fits.open(fits_file) as hdul:
+        with fits.open(fits_file, memmap=False, do_not_scale_image_data=True) as hdul:
             h = hdul[0].header
-            data = hdul[0].data if len(hdul) > 0 else None
 
             exptime = h.get('TEXP', h.get('EXPTIME', 0))
             try:
@@ -281,6 +280,9 @@ def read_fits_headers(fits_file):
             except (ValueError, TypeError):
                 zp1s = np.nan
 
+            naxis1 = int(h.get('NAXIS1', 0))
+            naxis2 = int(h.get('NAXIS2', 0))
+
             return {
                 'date_obs': h.get('DATE-OBS', ''),
                 'exptime': exptime,
@@ -288,7 +290,7 @@ def read_fits_headers(fits_file):
                 'object': h.get('OBJECT', 'N/A'),
                 'ra': float(h.get('RA', 0)) if 'RA' in h else 0.0,
                 'dec': float(h.get('DEC', 0)) if 'DEC' in h else 0.0,
-                'shape': data.shape if data is not None else (0, 0),
+                'shape': (naxis2, naxis1),
                 'fwhm': fwhm,
                 'zp1s': zp1s,
             }
@@ -528,7 +530,7 @@ def collect_observation_data(demo=False):
         nightid = night_dir.name
         night_dt, year_label, night_label = parse_nightid(nightid)
 
-        fits_files = sorted(night_dir.glob('*_[JHI].fits')) + sorted(night_dir.glob('*_HeI.fits'))
+        fits_files = sorted(night_dir.glob('*_[JHI].fits')) + sorted(night_dir.glob('*_HeI.fits')) + sorted(night_dir.glob('*_[JHI].fits.gz')) + sorted(night_dir.glob('*_HeI.fits.gz'))
         for fits_file in tqdm(fits_files, desc=f"  {nightid}", unit="FITS", leave=False):
             if '_PSF' in fits_file.name:
                 continue
