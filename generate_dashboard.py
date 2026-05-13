@@ -497,7 +497,7 @@ def generate_fits_preview_png(fits_file, png_file):
         return False
 
 
-def collect_observation_data():
+def collect_observation_data(demo=False):
     """Parcourt reductions/ et collecte les observations FITS."""
     observations = []
     phot_stats = []
@@ -506,7 +506,14 @@ def collect_observation_data():
     cache_dirty = False
 
     night_dirs = sorted(REDUCTIONS_PATH.glob('*/'))
-    emoji_print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
+    
+    # Mode demo: selectionne 20 nuits uniformément reparties
+    if demo and len(night_dirs) > 20:
+        indices = np.linspace(0, len(night_dirs) - 1, 20, dtype=int)
+        night_dirs = [night_dirs[i] for i in indices]
+        emoji_print(f"\n📂 MODE DEMO: {len(night_dirs)} nuits uniformément distribuées\n")
+    else:
+        emoji_print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
     for night_dir in tqdm(night_dirs, desc="Nuits", unit="night"):
         if not night_dir.is_dir():
             continue
@@ -1342,9 +1349,9 @@ def generate_html(observations, psf_previews, phot_stats=None):
     return html
 
 
-def main(no_sync=False):
+def main(no_sync=False, demo=False):
     emoji_print(f'\n📡 Scanning observations in {REDUCTIONS_PATH}...')
-    observations, phot_stats, psf_previews = collect_observation_data()
+    observations, phot_stats, psf_previews = collect_observation_data(demo=demo)
     emoji_print(f'\n✅ Found {len(observations)} observations + {len(phot_stats)} phot files')
 
     emoji_print('\n📊 Construction des graphiques Bokeh interactifs...')
@@ -1364,5 +1371,10 @@ if __name__ == '__main__':
         action='store_true',
         help='Desactive la synchronisation rsync web pour cette execution.'
     )
+    parser.add_argument(
+        '--demo',
+        action='store_true',
+        help='Mode demo: utilise 20 nuits uniformément reparties pour un test rapide.'
+    )
     args = parser.parse_args()
-    main(no_sync=args.no_sync)
+    main(no_sync=args.no_sync, demo=args.demo)
