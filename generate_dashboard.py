@@ -15,6 +15,7 @@ import getpass
 import os
 import argparse
 import subprocess
+import gc
 from datetime import datetime
 from pathlib import Path
 
@@ -36,6 +37,8 @@ import warnings
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+matplotlib.rcParams['figure.max_open_warning'] = 0  # Disable figure limit warning
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning)
 
@@ -492,8 +495,12 @@ def generate_fits_preview_png(fits_file, png_file):
             fig.tight_layout(pad=0.2)
             fig.savefig(png_file, format='png', dpi=200)
             plt.close(fig)
+            plt.close('all')  # Force close all figures
+            gc.collect()  # Force garbage collection
             return True
     except Exception:
+        plt.close('all')
+        gc.collect()
         return False
 
 
