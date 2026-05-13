@@ -651,6 +651,8 @@ def collect_observation_data(demo=False):
             cache_dirty = False
             files_since_save = 0
 
+        pbar_nights.set_postfix(fits=len(fits_files), phot=len(phot_files))
+
     psf_previews = {}
     night_dirs_psf = sorted(REDUCTIONS_PATH.glob('*/'))
     emoji_print("\n🌟 Chargement des cartes PSF\n")
