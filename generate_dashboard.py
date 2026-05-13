@@ -18,6 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from astropy.io import fits
 from astropy.wcs import WCS, FITSFixedWarning
 from astropy.wcs.utils import proj_plane_pixel_scales
@@ -475,7 +476,9 @@ def collect_observation_data():
     header_cache = load_header_cache(HEADER_CACHE_PATH)
     cache_dirty = False
 
-    for night_dir in sorted(REDUCTIONS_PATH.glob('*/')):
+    night_dirs = sorted(REDUCTIONS_PATH.glob('*/'))
+    print(f"\n📂 Scan des nuits d'observation: {REDUCTIONS_PATH}\n")
+    for night_dir in tqdm(night_dirs, desc="Nuits", unit="night"):
         if not night_dir.is_dir():
             continue
 
@@ -483,7 +486,7 @@ def collect_observation_data():
         night_dt, year_label, night_label = parse_nightid(nightid)
 
         fits_files = sorted(night_dir.glob('*_[JHI].fits')) + sorted(night_dir.glob('*_HeI.fits'))
-        for fits_file in fits_files:
+        for fits_file in tqdm(fits_files, desc=f"  {nightid}", unit="FITS", leave=False):
             if '_PSF' in fits_file.name:
                 continue
 
@@ -525,7 +528,7 @@ def collect_observation_data():
             *night_dir.glob('*phot*.fits'),
             *night_dir.glob('*phot*.fits.gz'),
         })
-        for phot_file in phot_files:
+        for phot_file in tqdm(phot_files, desc=f"  {nightid} (phot)", unit="phot", leave=False):
             if '_PSF' in phot_file.name:
                 continue
 
@@ -555,7 +558,9 @@ def collect_observation_data():
             })
 
     psf_previews = {}
-    for night_dir in sorted(REDUCTIONS_PATH.glob('*/')):
+    night_dirs_psf = sorted(REDUCTIONS_PATH.glob('*/'))
+    print("\n🌟 Chargement des cartes PSF\n")
+    for night_dir in tqdm(night_dirs_psf, desc="Nuits PSF", unit="night"):
         if not night_dir.is_dir():
             continue
 
@@ -589,7 +594,8 @@ def build_bokeh_night_plots(observations, phot_stats=None):
     df['date_dt'] = pd.to_datetime(df['date_obs'], errors='coerce')
 
     plot_map = {}
-    for nightid in sorted(df['nightid'].unique(), reverse=True):
+    nightids = sorted(df['nightid'].unique(), reverse=True)
+    for nightid in tqdm(nightids, desc="Plots Bokeh", unit="night"):
         nd = df[df['nightid'] == nightid].copy()
         nd = nd.dropna(subset=['date_dt']).sort_values('date_dt')
 
@@ -707,7 +713,8 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
 
     html = ['<div class="year-list">']
 
-    for year in sorted(df['year'].dropna().unique(), reverse=True):
+    years = sorted(df['year'].dropna().unique(), reverse=True)
+    for year in tqdm(years, desc="Structure HTML", unit="year"):
         ydf = df[df['year'] == year]
         n_nights = ydf['nightid'].nunique()
         n_obs = len(ydf)
@@ -800,6 +807,7 @@ def create_year_date_sections(observations, bokeh_divs, psf_previews):
 def generate_html(observations, psf_previews, phot_stats=None):
     """Construit le HTML final."""
     bokeh_script, bokeh_divs = build_bokeh_night_plots(observations, phot_stats=phot_stats)
+    print("   Mise en page du tableau de bord...")
     sections_html = create_year_date_sections(observations, bokeh_divs, psf_previews)
     search_html = create_search_section()
     bokeh_resources = INLINE.render()
@@ -1306,16 +1314,17 @@ def generate_html(observations, psf_previews, phot_stats=None):
 
 
 def main(no_sync=False):
-    print(f'Scanning observations in {REDUCTIONS_PATH}...')
+    print(f'\n📡 Scanning observations in {REDUCTIONS_PATH}...')
     observations, phot_stats, psf_previews = collect_observation_data()
-    print(f'Found {len(observations)} observations + {len(phot_stats)} phot files')
+    print(f'\n✅ Found {len(observations)} observations + {len(phot_stats)} phot files')
 
+    print('\n📊 Construction des graphiques Bokeh interactifs...')
     html = generate_html(observations, psf_previews, phot_stats=phot_stats)
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(f'OK Dashboard generated: {OUTPUT_PATH}')
-    print(f'Open in browser: file://{OUTPUT_PATH}')
+    print(f'\n✨ OK Dashboard generated: {OUTPUT_PATH}')
+    print(f'   Open in browser: file://{OUTPUT_PATH}')
     sync_web_archive(no_sync=no_sync)
 
 
